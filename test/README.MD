@@ -16,7 +16,7 @@ python generateCallGraphs.py
 
 ### dependency
 
-graphviz下载
+graphviz
 
 http://www.graphviz.org/download/
 

@@ -1,3 +1,4 @@
+import random
 from typing import Dict, List
 
 from utils.Logger import getLogger
@@ -19,6 +20,7 @@ class SampleTrimmer(TrimCtestsInterface):
         self.logger.info("start to trim ctests by sampling!")
         new_map = {}
         for conf, tests in tests_map.items():
+            random.shuffle(tests)
             lens = len(tests)
             if lens <= self.sampling:
                 new_map[conf] = tests

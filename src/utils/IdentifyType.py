@@ -27,6 +27,7 @@ GROUP = "GROUP"
 NAMESERVICES = "NAMESERVICES"
 INTERFACE = "INTERFACE"
 POTENTIALFLOAT = "POTENTIALFLOAT"
+UNKNOWN = "UNKNOWN"
 
 
 class IdentifyType(object):
@@ -119,7 +120,7 @@ class IdentifyType(object):
         return False
 
     def isDataSize(self, s):
-        datasize = ["MB"]
+        datasize = ["MB","KB","Byte"]
         for unit in datasize:
             if s.endswith(unit):
                 t = s[:s.find(unit)]
@@ -166,7 +167,7 @@ class IdentifyType(object):
         # return type
         # guess from value
         if value == None:
-            return ''
+            return NONE
         if self.isBool(value):
             return BOOL
         if self.isPort(name, value):
@@ -216,5 +217,5 @@ class IdentifyType(object):
             return NAMESERVICES
         if self.isInterface(name):
             return INTERFACE
-        # else:
-        #     return None
+        else:
+            return UNKNOWN

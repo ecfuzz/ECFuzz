@@ -52,7 +52,7 @@ def testAllInDir():  # sourcery skip: low-code-quality
                     print(f"{suffixLine}\n{fileName}.py contains {classSuit.countTestCases()} testcases:",
                           file=sys.stderr)
                     """
-                    方法层粒度测试
+                   
                     """
                     with open(f"{os.path.join(start_path, fileName)}.log", "w") as log:
                         sys.stdout = log

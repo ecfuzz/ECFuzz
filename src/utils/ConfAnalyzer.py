@@ -24,7 +24,12 @@ class ConfAnalyzer(object):
         with open(Configuration.putConf['unit_test_mapping_path']) as map_file:
             ConfAnalyzer.confUnitMap = json.load(map_file)
         ConfAnalyzer.confItemValueMap, ConfAnalyzer.confItemTypeMap= ConfParser().parse_conf_file()
-        ConfAnalyzer.confItemsBasic, ConfAnalyzer.confItemsMutable = ClassifyConfItems().run(ConfAnalyzer.confItemValueMap, ConfAnalyzer.confUnitMap)
+        if (len(ConfAnalyzer.confItemValueMap) < 50):
+            ConfAnalyzer.confItemsBasic = [] 
+            for confName in ConfAnalyzer.confItemValueMap:
+                ConfAnalyzer.confItemsMutable.append(confName)
+        else:
+            ConfAnalyzer.confItemsBasic, ConfAnalyzer.confItemsMutable = ClassifyConfItems().run(ConfAnalyzer.confItemValueMap, ConfAnalyzer.confUnitMap)
         ConfAnalyzer.confItemRelations = Constraint().getConstraintMap(ConfAnalyzer.confItemsBasic)
 
 

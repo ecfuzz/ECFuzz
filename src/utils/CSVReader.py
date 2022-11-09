@@ -19,5 +19,5 @@ def readCSVFile(filename: str) -> Tuple[List[str], List[List[str]]]:
         header = lines[0].strip().split(',')
         data = [line.strip().split(',') for line in lines[1:]]
         for i in range(len(data)):
-            data[i] = [int(x) for x in data[i]]
+            data[i] = [float(x) for x in data[i]]
         return header, data

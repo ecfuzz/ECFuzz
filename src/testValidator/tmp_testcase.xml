@@ -1,0 +1,3 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<configuration><property><name>dfs.balancer.address</name><value>0.0.0.0:0</value></property><property><name>dfs.encrypt.data.transfer.cipher.key.bitlength</name><value>128</value></property><property><name>dfs.image.transfer-bootstrap-standby.bandwidthPerSec</name><value>9223372036854775807</value></property><property><name>dfs.encrypt.data.transfer.cipher.suites</name><value /></property><property><name>dfs.image.transfer.timeout</name><value>60000</value></property><property><name>dfs.client.https.keystore.resource</name><value>ssl-client.xml</value></property><property><name>dfs.default.chunk.view.size</name><value>32768</value></property></configuration>

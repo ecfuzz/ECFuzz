@@ -20,22 +20,36 @@ class Testcase(Seed):
         if confItems is None:
             confItems = []
         super().__init__(confItems)
-        self.fileDir = Configuration.fuzzerConf['unit_testcase_dir']
+        # self.fileDir = Configuration.fuzzerConf['unit_testcase_dir']
 
     def __str__(self) -> str:
         return "Testcase:\n" + "".join(str(conf) + "\n" for conf in self.confItemList)
 
-    def writeToFile(self, fileName: str = None) -> str:
-        if not os.path.exists(self.fileDir):
-            os.mkdir(self.fileDir)
+    def writeToFile(self, fileDir: str = None, fileName: str = None) -> str:
+        """
+
+       Xml
+
+        Args:
+            fileName:
+
+        Returns:
+            str:
+        """
+        self.logger.info(f"writeToFile_fileDir:{fileDir}")
+        if not os.path.exists(fileDir):
+            self.logger.info(f"writeToFile_fileDir:{fileDir} not os.path.exists(fileDir)") 
+            os.makedirs(fileDir)
+        self.logger.info(f"writeToFile_fileDir_os.path.exists:{os.path.exists(fileDir)}") 
 
         if self.fileName.__len__() == 0:
             if fileName:
-                filePath = os.path.join(self.fileDir, fileName)
+                filePath = os.path.join(fileDir, fileName)
             else:
-                filePath = os.path.join(self.fileDir, self.generateFileName())
+                self.fileName = self.generateFileName()
+                filePath = os.path.join(fileDir, self.fileName)
         else:
-            filePath = os.path.join(self.fileDir, self.fileName)
+            filePath = os.path.join(fileDir, self.fileName)
 
         self.filePath = filePath
         if Configuration.fuzzerConf['project'] in ["hadoop-common", "hadoop-hdfs", "hbase"]:

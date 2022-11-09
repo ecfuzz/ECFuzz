@@ -15,6 +15,15 @@ class SeedGenerator(object):
     """
     Seed Generator is responsible for generating high quality seeds according to the information
     offered by `ConfAnalyzer`.
+
+    Attributes:
+        confItemsBasic (List[str]):
+        confItemMutable (List[str]):
+        confItems (List[str]):
+        confItemRelations (Dict[str, List[List[str, str]]]):
+        confItemTypeMap (Dict[str, str]):-
+        confItemValueMap (Dict[str, str]):-
+        lastGeneratedSeed (Seed):
     """
 
     def __init__(self) -> None:
@@ -24,9 +33,11 @@ class SeedGenerator(object):
 
         self.seedPoolSelectionRatio = float(fuzzerConf['seed_pool_selection_ratio'])
 
-        # 加载配置项信息（运行成功的前提是ConfAnalyzer已经完成了分析）
+        
         self.confItemsBasic: List[str] = ConfAnalyzer.confItemsBasic
         self.confItemMutable: List[str] = ConfAnalyzer.confItemsMutable
+        self.confItemMutableSize: int = len(self.confItemMutable)
+        self.sequentialGeneratorIndex: int = 0
         self.confItems: List[str] = self.confItemsBasic + self.confItemMutable
         self.confItemRelations: Dict[str, List[List[str, str]]] = ConfAnalyzer.confItemRelations
         self.confItemTypeMap: Dict[str, str] = ConfAnalyzer.confItemTypeMap
@@ -55,15 +66,30 @@ class SeedGenerator(object):
         if fromPool:
             self.logger.info("Random Choose a Seed from pool.")
             self.lastGeneratedSeed = random.choice(self.seedPool)
-        else:  
+        else:  #
             self.logger.info("Try creating a Seed...")
+            #
             confItemList = copy.deepcopy(self.confItemMutable)
+            #
+            # k = random.randint(1, confItemList.__len__())
             if Configuration.fuzzerConf['mutator'].split(".")[-1] == "SingleMutator":
                 k = 1
             else:
                 k = random.randint(3, 6)
-            random.shuffle(confItemList)
-            confItemList = confItemList[:k]
+
+            if random.random() > float(Configuration.fuzzerConf['seed_gen_seq_ratio']):
+                #
+                random.shuffle(confItemList)
+                confItemList = confItemList[:k]
+            else:
+                #
+                b = min(self.confItemMutableSize, self.sequentialGeneratorIndex + k)
+                confItemList = confItemList[self.sequentialGeneratorIndex: b]
+                self.sequentialGeneratorIndex = b
+                if self.sequentialGeneratorIndex >= self.confItemMutableSize:
+                    self.sequentialGeneratorIndex = 0
+
+            #
             relatedConfItems = []
             for confItemName in confItemList:
                 if self.confItemRelations.__contains__(confItemName):
@@ -75,7 +101,7 @@ class SeedGenerator(object):
                             for name in confItemList]
 
             self.lastGeneratedSeed = Seed(confItemList)
-            self.addSeedToPool(self.lastGeneratedSeed)
+            # self.addSeedToPool(self.lastGeneratedSeed)
 
         return self.lastGeneratedSeed
 

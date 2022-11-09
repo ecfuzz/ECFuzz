@@ -9,6 +9,14 @@ from testValidator.SystemTester import SystemTester
 
 
 class DichotomyTrimmer(NormalTrimmer):
+    """
+   
+   
+
+    Attributes:
+        threshold (int):
+        maxTry (int):
+    """
 
     def __init__(self, systemTester: SystemTester = None, defaultValueMap: Dict[str, str] = None):
         super(DichotomyTrimmer, self).__init__(systemTester, defaultValueMap)

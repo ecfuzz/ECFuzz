@@ -4,6 +4,7 @@ from typing import Dict
 
 from utils.IdentifyType import IdentifyType
 from utils.Configuration import Configuration
+from utils.Logger import getLogger
 
 class ConfParser(object):
     """parse the conf based the specified project
@@ -16,6 +17,7 @@ class ConfParser(object):
         self.project: str = Configuration.fuzzerConf['project']
         self.path: str = Configuration.putConf['conf_path']
         self.deprecate_conf : dict = self.load_deprecate_config_map()
+        self.logger = getLogger()
 
     def load_deprecate_config_map(self) -> Dict:
         """ 
@@ -84,7 +86,7 @@ class ConfParser(object):
                     cur_value = prop.text
             if cur_key not in conf_map:
                 if cur_key in deprecate_conf:
-                    print(">>>>[ConfParser] {} in your input conf file is deprecated in the project,".format(cur_key)
+                    self.logger.info(">>>>[ConfParser] {} in your input conf file is deprecated in the project,".format(cur_key)
                           + " replaced with {}".format(deprecate_conf[cur_key]))
                     cur_key = deprecate_conf[cur_key]
                 conf_map[cur_key] = cur_value
@@ -110,7 +112,7 @@ class ConfParser(object):
                     cur_key, cur_value = [x.strip() for x in seg]
                     if cur_key not in conf_map:
                         if cur_key in deprecate_conf:
-                            print(
+                            self.logger.info(
                                 ">>>>[ConfParser] {} in your input conf file is deprecated in the project,".format(cur_key)
                                 + " replaced with {}".format(deprecate_conf[cur_key]))
                             cur_key = deprecate_conf[cur_key]

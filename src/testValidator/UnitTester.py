@@ -1,3 +1,4 @@
+import operator
 import subprocess
 import os, time, stat
 import shutil
@@ -15,12 +16,13 @@ from utils.ConfAnalyzer import ConfAnalyzer
 from utils.Configuration import Configuration
 from utils.Logger import Logger, getLogger
 from utils.ShowStats import ShowStats
+from utils.UnitConstant import FUZZER_DIR
 
 class UnitTester(Tester):
     """
     Unit Tester perform unit tests to look for possible vulnerabilities.
     """
-
+    cur_unittest_count: int = 0
     def __init__(self) -> None:
         super().__init__()
         self.logger = getLogger()
@@ -32,6 +34,8 @@ class UnitTester(Tester):
         self.pre_find_time: float = ShowStats.fuzzerStartTime
         self.total_time: float = 0.0 # total time for run time
         self.total_count: int = 0 # it equals to the testcases' number
+        # unittest time info
+        self.unitTestTimeMap = self.TimeFilterTrimmer.data
 
     def run_test_batch(self, param_values, associated_test_map):
         self.logger.info(f">>>>[UnitTester] start running ctests for {len(associated_test_map)} parameters")
@@ -52,35 +56,36 @@ class UnitTester(Tester):
             self.logger.info(
                 f">>>>[UnitTester] running group {index} where {len(tested_params)} params shares {len(tests)} ctests")
 
+            # cal the timeout
+            timeout = -1
+            for test in tests:
+                if test in self.unitTestTimeMap:
+                    timeout = max(timeout, self.unitTestTimeMap[test])
+            timeout = timeout * len(tests) * 1.5 if timeout != -1 else 50 * len(tests)
+            timeout = timeout + 60
+            ShowStats.unitCmdTimeout = int(timeout)
+            self.logger.info(f">>>>[UnitTester] timeout for grop {index} is {timeout}")
+            
             test_str = self.rutils.join_test_string(tests)
             os.chdir(Configuration.putConf['testing_dir'])
             self.logger.info(f">>>>[UnitTester] chdir to {Configuration.putConf['testing_dir']}")
 
             cmd = self.rutils.maven_cmd(test_str)
-            if self.rutils.display_mode:
-                os.system(" ".join(cmd))
-                continue
-
-            process = Popen(cmd, stdout=PIPE, stderr=PIPE)
-            stdout = ""
-            stderr = ""
-            if self.rutils.cmd_timeout:
+            
+            with open(os.devnull, 'w') as devnull:
                 try:
-                    stdout, stderr = process.communicate(timeout=int(self.rutils.cmd_timeout))
+                    process = subprocess.Popen(cmd, stdout=devnull, stderr=devnull, preexec_fn=os.setsid)
+                    process.communicate(timeout=int(timeout))
                 except TimeoutExpired as e:
-                    # test hanged, treated as failure.
-                    process.kill()
-                    self.logger.info(f">>>>[UnitTester] maven cmd timeout {e}")
-                    clsname, testname = test_str.split("#")
-                    tr.ran_tests_and_time.add(test_str + "\t" + str(self.rutils.cmd_timeout))
-                    tr.failed_tests.add(test_str)
-                    continue
-            else:
-                stdout, stderr = process.communicate()
+                    # for test hanged
+                    # process.kill()
+                    os.killpg(os.getpgid(process.pid), 9)
+                    self.logger.info(f">>>>[UnitTester] process killed of {e}")
+                    
             os.chdir(Configuration.putConf['run_unit_dir'])
             self.logger.info(f">>>>[UnitTester] chdir to {Configuration.putConf['run_unit_dir']}")
 
-            print_output = self.rutils.strip_ansi(stdout.decode("ascii", "ignore"))
+            # print_output = self.rutils.strip_ansi(stdout.decode("ascii", "ignore"))
             # print(print_output)
             test_by_cls = self.rutils.group_test_by_cls(tests)
             for clsname, methods in test_by_cls.items():
@@ -88,6 +93,9 @@ class UnitTester(Tester):
                 for m in methods:
                     if m in times:
                         tr.ran_tests_and_time.add(f"{clsname}#{m}" + "\t" + times[m])
+                        # ShowStats.longgestUnitTestTime = max(ShowStats.longgestUnitTestTime, float(times[m]))
+                        # update time or add new time info
+                        self.unitTestTimeMap[f"{clsname}#{m}"] = float(times[m])
                         if m in errors:
                             tr.failed_tests.add(f"{clsname}#{m}")
         duration = time.time() - start_time
@@ -97,9 +105,13 @@ class UnitTester(Tester):
         self.logger.info(f">>>>[UnitTester] python-timed for running config file: {duration}")
 
         self.unitUtils.clean_config()
+        # sort the time
+        self.unitTestTimeMap = dict(sorted(self.unitTestTimeMap.items(), key=operator.itemgetter(1)))
         return tr
 
     def test_conf_file(self, testcase: Testcase) -> TestResult:
+        self.total_count += 1
+        ShowStats.totalUnitTestcases = self.total_count
         # every loop, it needs to create a new TestResult
         unit_start_time = time.time()
         unitResult = TestResult()
@@ -117,7 +129,7 @@ class UnitTester(Tester):
         # associated_tests = set(associated_tests)
         # trim ctests
         associated_test_map = self.SampleTrimmer.trimCtests(associated_test_map)
-        associated_test_map = self.TimeFilterTrimmer.trimCtests(associated_test_map)
+        associated_test_map = self.TimeFilterTrimmer.trimCtests(associated_test_map, self.unitTestTimeMap)
         for conf, ts in associated_test_map.items():
             associated_tests += ts
         associated_tests = set(associated_tests)
@@ -140,25 +152,29 @@ class UnitTester(Tester):
 
         else:
             self.logger.info(">>>>[UnitTester] no ctest failed for changed params in conf file")
+            # return for test cout is zero
+            return unitResult
         
         unit_end_time = time.time()
         once_unit_time = unit_end_time - unit_start_time
 
         self.total_time += once_unit_time
-        self.total_count += 1
+        # self.total_count += 1
+        
+        UnitTester.cur_unittest_count = len(associated_tests)
 
         ShowStats.totalRunUnitTestsCount += len(associated_tests)
         ShowStats.averageUnitTestTime = self.total_time / ShowStats.totalRunUnitTestsCount
     
-        ShowStats.totalUnitTestcases = self.total_count
+        # ShowStats.totalUnitTestcases = self.total_count
         ShowStats.unitTestExecSpeed = ShowStats.totalRunUnitTestsCount / self.total_time
-        ShowStats.longgestUnitTestTime = max(ShowStats.longgestUnitTestTime, once_unit_time / len(associated_tests))
+        # ShowStats.longgestUnitTestTime = max(ShowStats.longgestUnitTestTime, once_unit_time / len(associated_tests))
         
         if unitResult.status == 1:
             # find new failed unit tests
             ShowStats.lastNewFailUnitTest = 0.0
             self.pre_find_time = unit_end_time
-            ShowStats.totalUnitTestFailed += unitResult.failed_tests_count
+            # ShowStats.totalUnitTestFailed += unitResult.failed_tests_count
         else :
             # this round don't find failed unit tests
             ShowStats.lastNewFailUnitTest = unit_end_time - self.pre_find_time
@@ -170,6 +186,9 @@ class UnitTester(Tester):
         return unitResult
 
     def runWithMutilprocess(self, testcase: Testcase) -> TestResult:
+        self.total_count += 1
+        ShowStats.totalUnitTestcases = self.total_count
+        
         unit_start_time = time.time()
         unitResult = TestResult()
         test_input = self.unitUtils.extract_conf_diff(testcase)
@@ -186,14 +205,23 @@ class UnitTester(Tester):
         # associated_tests = set(associated_tests)
         # trim ctests
         associated_test_map = self.SampleTrimmer.trimCtests(associated_test_map)
-        associated_test_map = self.TimeFilterTrimmer.trimCtests(associated_test_map)
+        associated_test_map = self.TimeFilterTrimmer.trimCtests(associated_test_map, self.unitTestTimeMap)
         for _, ts in associated_test_map.items():
             associated_tests += ts
         associated_tests = set(associated_tests)
         self.logger.info(f">>>>[UnitTester] # parameters associated with the run: {len(params)}")
 
         self.logger.info(f">>>>[UnitTester] # ctests to run in total: {len(associated_tests)}")
-        if len(associated_tests) == 0:
+        # cal the timeout
+        timeout = -1
+        for test in associated_tests:
+            if test in self.unitTestTimeMap:
+                timeout = max(timeout, self.unitTestTimeMap[test])
+        timeout = timeout * len(tests) * 1.5 if timeout != -1 else 50 * len(tests)
+        timeout = timeout + 60
+        ShowStats.unitCmdTimeout = int(timeout)
+
+        if not associated_tests:
             return unitResult
         # inject key,value to file
         self.unitUtils.inject_config(test_input)
@@ -206,11 +234,17 @@ class UnitTester(Tester):
             mvn_str = "mvn surefire:test -Dtest={}"
         else :
             mvn_str = "mvn test -Dtest={}"
+        if Configuration.fuzzerConf['project'] == "alluxio":
+            if Configuration.fuzzerConf['use_surefire'] == "True":
+                mvn_str = "mvn license:format surefire:test -Dtest={} -DfailIfNoTests=false -Dcheckstyle.skip -Dlicense.skip -Dfindbugs.skip -Dmaven.javadoc.skip=true"
+            else :
+                mvn_str = "mvn license:format test -Dtest={} -DfailIfNoTests=false -Dcheckstyle.skip -Dlicense.skip -Dfindbugs.skip -Dmaven.javadoc.skip=true"
         # all_tests = list(associated_tests)
         all_tests = self.rutils.split_tests_by_cls(associated_tests)
         popen_list = []
         # self.logger.info(f">>>>[UnitTester] mvn_str is : {mvn_str}")
-        self.logger.info(f">>>>[UniTester] start to run with mutil-process")
+        self.logger.info(f">>>>[UnitTester] all tests count is : {len(all_tests)}")
+        self.logger.info(">>>>[UniTester] start to run with mutil-process")
         with open(os.devnull, 'w') as devnull:
             for index in range(len(all_tests)):
                 # run each test by a shell
@@ -225,14 +259,22 @@ class UnitTester(Tester):
                     self.logger.info(">>>>[UniTester] wait for 4 process running done")
                     for popen in popen_list:
                         # wait fall each shell execute done
-                        popen.wait()
+                        try:
+                            popen.communicate(timeout=int(timeout))
+                        except TimeoutExpired as e:
+                            popen.kill()
+                            self.logger.info(f">>>>[UnitTester] process killed of {e}")
                     popen_list = []
                     self.logger.info(">>>>[UniTester] 4 process runned done")
             # wait for the rest of process
             for popen in popen_list:
-                popen.wait()
-        self.logger.info(f">>>>[UniTester] run all tests done")
-        self.logger.info(f">>>>[UniTester] start to parse all output file")
+                try:
+                    popen.communicate(timeout=int(timeout))
+                except TimeoutExpired as e:
+                    popen.kill()
+                    self.logger.info(f">>>>[UnitTester] process killed of {e}")
+        self.logger.info(">>>>[UniTester] run all tests done")
+        self.logger.info(">>>>[UniTester] start to parse all output file")
         # parse output
         parse_out_start_time = time.time()
         tr = unit_result(ran_tests_and_time=set(), failed_tests=set())
@@ -245,7 +287,9 @@ class UnitTester(Tester):
                 if m in times:
                     # record every test's time and failed test
                     tr.ran_tests_and_time.add(f"{clsname}#{m}" + "\t" + times[m])
-                    ShowStats.longgestUnitTestTime = max(ShowStats.longgestUnitTestTime, float(times[m]))
+                    # ShowStats.longgestUnitTestTime = max(ShowStats.longgestUnitTestTime, float(times[m]))
+                    # update time or add new time info
+                    self.unitTestTimeMap[f"{clsname}#{m}"] = float(times[m])
                     if m in errors:
                         tr.failed_tests.add(f"{clsname}#{m}")
             # self.logger.info(f">>>>[UnitTester] write out of {clsname} done")
@@ -264,21 +308,206 @@ class UnitTester(Tester):
             unitResult.status = 1
             ShowStats.lastNewFailUnitTest = 0.0
             unitResult.failed_tests_count = len(tr.failed_tests)
+            self.pre_find_time = unit_end_time
         else :
             ShowStats.lastNewFailUnitTest = unit_end_time - self.pre_find_time
 
         self.total_time += once_unit_time
-        self.total_count += 1
+        # self.total_count += 1
+        
+        UnitTester.cur_unittest_count = len(associated_tests)
 
         ShowStats.totalRunUnitTestsCount += len(associated_tests)
         ShowStats.averageUnitTestTime = self.total_time / ShowStats.totalRunUnitTestsCount
-        ShowStats.totalUnitTestFailed += unitResult.failed_tests_count
+        # ShowStats.totalUnitTestFailed += unitResult.failed_tests_count
 
-        ShowStats.totalUnitTestcases = self.total_count
+        # ShowStats.totalUnitTestcases = self.total_count
         ShowStats.unitTestExecSpeed = ShowStats.totalRunUnitTestsCount / self.total_time
         self.logger.info(f">>>>[UnitTester] status is : {unitResult.status}; failed tests is : {unitResult.failed_tests_count}")
-        
+
         self.logger.info(">>>>[UnitTester] run one round unit test with mutil-process done")
+        # sort the time
+        self.unitTestTimeMap = dict(sorted(self.unitTestTimeMap.items(), key=operator.itemgetter(1)))
+
+        return unitResult
+
+    def preKillRun(self, testcase: Testcase) -> TestResult:
+        """run with pre kill if there has failed tests.
+
+        Args:
+            testcase (Testcase): _description_
+
+        Returns:
+            TestResult: _description_
+        """
+        self.total_count += 1
+        ShowStats.totalUnitTestcases = self.total_count
+        
+        unit_start_time = time.time()
+        unitResult = TestResult()
+        test_input = self.unitUtils.extract_conf_diff(testcase)
+        params = test_input.keys()
+        associated_test_map, associated_tests = {}, []
+        for p in params:
+            if p in ConfAnalyzer.confUnitMap:
+                tests = ConfAnalyzer.confUnitMap[p]
+                self.logger.info(f">>>>[UnitTester] parameter {p} has {len(tests)} tests")
+                associated_test_map[p] = tests
+                # associated_tests = associated_tests + tests
+            else:
+                self.logger.info(f">>>>[UnitTester] parameter {p} has 0 tests")
+        # associated_tests = set(associated_tests)
+        # trim ctests
+        associated_test_map = self.SampleTrimmer.trimCtests(associated_test_map)
+        associated_test_map = self.TimeFilterTrimmer.trimCtests(associated_test_map, self.unitTestTimeMap)
+        for _, ts in associated_test_map.items():
+            associated_tests += ts
+        associated_tests = set(associated_tests)
+        self.logger.info(f">>>>[UnitTester] # parameters associated with the run: {len(params)}")
+
+        self.logger.info(f">>>>[UnitTester] # ctests to run in total: {len(associated_tests)}")
+        # cal the timeout
+        timeout = -1
+        for test in associated_tests:
+            if test in self.unitTestTimeMap:
+                timeout = max(timeout, self.unitTestTimeMap[test])
+        timeout = timeout * len(associated_tests) * 1.5 if timeout != -1 else 50 * len(associated_tests)
+        timeout = timeout + 60
+        ShowStats.unitCmdTimeout = int(timeout)
+
+        if not associated_tests:
+            # return empty result
+            self.logger.info(">>>>[UnitTester] no tests for cur input testcase")
+            return unitResult
+        # inject key,value to file
+        self.unitUtils.inject_config(test_input)
+        # change to the dir
+        os.chdir(Configuration.putConf['testing_dir'])
+        self.logger.info(f">>>>[UnitTester] change to testing dir : {Configuration.putConf['testing_dir']}")
+        # start to run
+        mvn_cmd =[]
+        test_mode = "surefire:test" if Configuration.fuzzerConf['use_surefire'] == "True" else "test"
+        maven_args = ["-DfailIfNoTests=false", "-Dcheckstyle.skip", "-Dlicense.skip", "-Dfindbugs.skip", "-Dmaven.javadoc.skip=true"] if Configuration.fuzzerConf['project'] == "alluxio" else []
+        # if Configuration.fuzzerConf['project'] == "alluxio":
+        #     if Configuration.fuzzerConf['use_surefire'] == "True":
+        #         mvn_str = "mvn license:format surefire:test -Dtest={} -DfailIfNoTests=false -Dcheckstyle.skip -Dlicense.skip -Dfindbugs.skip -Dmaven.javadoc.skip=true"
+        #     else :
+        #         mvn_str = "mvn license:format test -Dtest={} -DfailIfNoTests=false -Dcheckstyle.skip -Dlicense.skip -Dfindbugs.skip -Dmaven.javadoc.skip=true"
+        # all_tests = list(associated_tests)
+        all_tests = self.rutils.split_tests_by_cls(associated_tests)
+        # self.logger.info(f">>>>[UnitTester] mvn_str is : {mvn_str}")
+        test_str = self.rutils.cal_strs(all_tests)
+        
+        if Configuration.fuzzerConf['project'] == "alluxio":
+            mvn_cmd = ["mvn", "license:format" ,test_mode, "-Dtest={}".format(test_str)] + maven_args
+        else:
+            mvn_cmd = ["mvn" ,test_mode, "-Dtest={}".format(test_str)] + maven_args
+        
+        # mvn_str = mvn_str.format(test_str)
+        self.logger.info(">>>>[UnitTester] start to run by pre kill")
+        outfile = os.path.join(FUZZER_DIR,"unitResult.txt")
+        # mvn_cmd[-1] = mvn_cmd[-1] + f" > {outfile} 2>&1"
+        # mvn_cmd = mvn_cmd + [">",f"{outfile}","2>&1"]
+        # mvn_str = mvn_str + " " + f"> {outfile} 2>&1"
+        self.logger.info(f">>>>[UnitTester] mvn cmd is : {mvn_cmd}")
+        cur_total_unit_test = 0
+        
+        # with open(os.devnull, 'w') as devnull:
+        # each run will cover the old data
+        # process = subprocess.Popen(mvn_str, shell=True, stdout=devnull, stderr=devnull)
+        outfd = open(outfile, "w")
+        process = subprocess.Popen(mvn_cmd, stderr=outfd, stdout=outfd, preexec_fn=os.setsid)
+        # process.communicate()
+        # process.communicate(timeout=int(timeout))
+        self.logger.info(">>>>[UnitTester] real start to run")
+        time.sleep(2)
+        total_time = int(timeout)
+        self.logger.info(f">>>>[UnitTester] timeout is : {int(timeout)}")
+        s_time = time.time()
+        with open(outfile, "r") as file:
+            while (1):
+                # each sec to check the outfile
+                time.sleep(0.1)
+                # total_time -= 1
+                if int(time.time() - s_time) >= total_time:
+                    # here it's running time is over timeout
+                    # process.kill()
+                    os.killpg(os.getpgid(process.pid), 9)
+                    unitResult.status = 1
+                    unitResult.description = "killed by timeout"
+                    cur_total_unit_test += 1
+                    self.logger.info(">>>>[UnitTester] kill process by timeout")
+                    break
+                line_info = file.readline()
+                # self.logger.info(f">>>>[UnitTester] line info is : {line_info}")
+                if line_info:
+                    # self.logger.info(f">>>>[UnitTester] line info is : {line_info}")
+                    # deal the line info : str
+                    round_count, is_failed = self.rutils.deal_line_info(line_info=line_info)
+                    if is_failed:
+                        # process.kill()
+                        os.killpg(os.getpgid(process.pid), 9)
+                        unitResult.status = 1
+                        unitResult.description = "killed by pre"
+                        cur_total_unit_test += round_count
+                        self.logger.info(">>>>[UnitTester] kill process by pre")
+                        break
+                    else:
+                        # no falied 
+                        cur_total_unit_test += round_count
+                        pass
+                else :
+                    # no info, determine whether process is done
+                    code = process.poll()
+                    if code == 0:
+                        # normally terminate
+                        unitResult.status = 0
+                        unitResult.description = "normally terminate"
+                        self.logger.info(">>>>[UnitTester] process normally terminated")
+                        break
+                    elif code == None:
+                        # running
+                        continue
+                    elif code == 137:
+                        # killed by -9, it needs to break
+                        unitResult.status = 1
+                        unitResult.description = "killed by -9"
+                        self.logger.info(">>>>[UnitTester] process has be killed by -9")
+                        break
+                    else:
+                        continue
+                    
+        self.logger.info(f">>>>[UnitTester] this testcase's unittests count is : {cur_total_unit_test}")
+        self.logger.info(">>>>[UnitTester] run by pre kill done")               
+        self.unitUtils.clean_config()
+        outfd.close()
+        # change to origin dir
+        os.chdir(Configuration.putConf['run_unit_dir'])
+        self.logger.info(f">>>>[UnitTester] change to origin dir : {Configuration.putConf['run_unit_dir']}")
+        
+        UnitTester.cur_unittest_count = cur_total_unit_test
+
+        unit_end_time = time.time()
+        once_unit_time = unit_end_time - unit_start_time
+        # deal with result
+        if unitResult.status == 1:
+            ShowStats.lastNewFailUnitTest = 0.0
+            self.pre_find_time = unit_end_time
+        else :
+            ShowStats.lastNewFailUnitTest = unit_end_time - self.pre_find_time
+
+        self.total_time += once_unit_time
+        # self.total_count += 1
+
+        ShowStats.totalRunUnitTestsCount += cur_total_unit_test
+        ShowStats.averageUnitTestTime = self.total_time / ShowStats.totalRunUnitTestsCount
+        # ShowStats.totalUnitTestFailed += unitResult.failed_tests_count
+
+        # ShowStats.totalUnitTestcases = self.total_count
+        ShowStats.unitTestExecSpeed = ShowStats.totalRunUnitTestsCount / self.total_time
+        self.logger.info(f">>>>[UnitTester] status is : {unitResult.status}")
+        # sort the time
+        # self.unitTestTimeMap = dict(sorted(self.unitTestTimeMap.items(), key=operator.itemgetter(1)))
 
         return unitResult
 
@@ -300,6 +529,12 @@ class UnitTester(Tester):
                 self.logger.info(">>>>[UnitTester] start to delete the file")
                 if not os.access(surefire_dir, os.W_OK):
                     os.chmod(surefire_dir, stat.S_IWRITE)
-                shutil.rmtree(surefire_dir, ignore_errors=False)
-        # return self.test_conf_file(testcase)
-        return self.runWithMutilprocess(testcase)
+                shutil.rmtree(surefire_dir, ignore_errors=True)
+                
+        if Configuration.fuzzerConf["use_pre_kill"] == 'True':
+            return self.preKillRun(testcase=testcase)
+        if Configuration.fuzzerConf['use_mutil_pro'] == 'True':
+            return self.runWithMutilprocess(testcase)
+        
+        return self.test_conf_file(testcase=testcase)
+        

@@ -34,14 +34,29 @@ class TimeFilterTrimmer(TrimCtestsInterface):
         data = {dp.loc[i][0]: sum(dp.loc[i][1:6]) / 5 for i in range(size)}
         return dict(sorted(data.items(), key=operator.itemgetter(1)))
 
-    def trimCtests(self, tests_map: dict) -> Dict[str, List[str]]:
+    def trimCtests(self, tests_map: dict, data: dict) -> Dict[str, List[str]]:
         self.logger.info("start to trim ctests by time!")
         new_map = {}
         for conf, tests in tests_map.items():
-            tmp = {test: self.data[test] for test in tests if test in self.data}
-            sorted_tmp = dict(sorted(tmp.items(), key=operator.itemgetter(1)))
-            ls = list(sorted_tmp.keys())
-            leaved = (int)(len(ls) * self.scale)
-            new_map[conf] = [ls[0]] if leaved < 1 else ls[:leaved]
+            # tmp = {test: data[test] for test in tests if test in data}
+            # sorted_tmp = dict(sorted(tmp.items(), key=operator.itemgetter(1)))
+            # new_map[conf] = [test for test in tests if (test in data and data[test] < 10)]
+            # for test in tests:
+            #     if data[test] > 10:
+            #         continue
+            #     else :
+            #         new_map[conf]
+            new_map[conf] = []
+            for test in tests:
+                if test in data:
+                    if data[test] < 5:
+                        new_map[conf].append(test)
+                    else:
+                        continue
+                else:
+                    new_map[conf].append(test)
+            # ls = list(sorted_tmp.keys())
+            # leaved = (int)(len(ls) * self.scale)
+            # new_map[conf] = [ls[0]] if leaved < 1 else ls[:leaved]
         self.logger.info("trim by time done!")
         return new_map

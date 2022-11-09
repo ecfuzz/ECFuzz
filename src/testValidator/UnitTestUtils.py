@@ -12,6 +12,7 @@ class UnitTestUtils(object):
     def __init__(self) -> None:
         self.logger = getLogger()
         self.project = Configuration.fuzzerConf['project']
+        
         self.default_conf = self.load_default_conf(Configuration.putConf['default_conf_path'])
 
     def inject_config(self, param_value_pairs: dict) -> None:
@@ -97,6 +98,11 @@ class UnitTestUtils(object):
             if len(unexpected) > 1:
                 self.logger.info(">>>>[UnitTestUtils] [strange] there are more than one unexpected tests")
             expected_noshow = expected_methods - set(times.keys())
+            # treat the tests be killed as fail
+            for e in expected_noshow:
+                times[e] = str(0.01)
+                errors[e] = "fail"
+
             for u in unexpected:
                 for e in expected_noshow:
                     times[e] = times[u]
@@ -116,6 +122,11 @@ class UnitTestUtils(object):
             fpath.close()
         except Exception as e:
             self.logger.info(">>>>[UnitTestUtils] failed to parse surefire file: {}".format(e))
+            # if project is not alluxio, treat the methods as failed
+            if Configuration.fuzzerConf['project'] != "alluxio":
+                for m in expected_methods:
+                    times[m] = str(0)
+                    errors[m] = "fail"
 
         # pretty printing
         self.logger.info(">>>>[UnitTestUtils] result to be return:")

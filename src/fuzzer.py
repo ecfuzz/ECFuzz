@@ -1,7 +1,11 @@
 import os
+import shutil
+import stat
+import sys
 from time import time
 import logging
 from typing import Dict
+import gc
 
 from seedGenerator.SeedGenerator import SeedGenerator
 from testValidator.TestValidator import TestValidator
@@ -31,6 +35,7 @@ class Fuzzer(object):
         self.putConf: Dict[str, str] = Configuration.putConf
 
         ShowStats.mutationStrategy = self.fuzzerConf['mutator'].split(".")[-1]
+        # ShowStats.mutationStrategy = "SingleMutator"
         ShowStats.fuzzerStartTime = time.time()
 
         self.logger.info("Analyze PUT configurations...")
@@ -51,7 +56,7 @@ class Fuzzer(object):
 
         if self.fuzzerConf['data_viewer'] == 'True':
             from utils.DataViewer import DataViewer
-            self.dataViewer = DataViewer()
+            self.dataViewer = DataViewer(self.fuzzerConf['data_viewer_env'])
 
     def sigintHandler(self, signum, frame):
         stopSoon.put(True)
@@ -59,6 +64,12 @@ class Fuzzer(object):
         time.sleep(1)
         exit(0)
         # process.kill()
+    
+    def deleteDir(self, directory):
+        if os.path.exists( directory ):
+            if not os.access(directory, os.W_OK):
+                os.chmod(directory, stat.S_IWRITE)
+            shutil.rmtree(directory) 
 
     def run(self):
         """
@@ -79,6 +90,11 @@ class Fuzzer(object):
         t1.start()
         fuzzingLoop = int(self.fuzzerConf['fuzzing_loop'])
 
+        self.deleteDir(Configuration.fuzzerConf['unit_testcase_dir'])
+        self.deleteDir(Configuration.fuzzerConf['unit_test_results_dir'])
+        self.deleteDir(Configuration.fuzzerConf['sys_test_results_dir'])
+        self.deleteDir(Configuration.fuzzerConf['sys_testcase_fail_dir'])
+
         print("\033[37m")
         if fuzzingLoop > 0:
             self.logger.info(f"Fuzzer ready to run for {fuzzingLoop} loops...")
@@ -90,8 +106,11 @@ class Fuzzer(object):
                 except Exception as e:
                     print(e)
                     break
-                self.loop()
-            
+                try:
+                    self.loop()
+                except Exception as e:
+                    self.logger.info(e)
+                    break
         else:
             self.logger.info("Fuzzer ready to run forever...")
             while True:
@@ -102,7 +121,11 @@ class Fuzzer(object):
                 except Exception as e:
                     print(e)
                     break
-                self.loop()
+                try:
+                    self.loop()
+                except Exception as e:
+                    self.logger.info(e)
+                    break
         stopSoon.put(True)
         self.logger.info(f">>>>[fuzzer] hava a good time")
         print("\033[37m")
@@ -120,23 +143,32 @@ class Fuzzer(object):
 
             If any result yields an interesting value, we add that seed back to our pool for future iterations.
         """
+        #
         self.logger.info("Generator a Seed from SeedGenerator")
         seed = self.seedGenerator.generateSeed()
         ShowStats.queueLength = len(self.seedGenerator.seedPool)
+        
         testcasePerSeed = int(self.fuzzerConf['testcase_per_seed'])
         for _ in range(testcasePerSeed):
             self.logger.info(">>>>[fuzzer] start to mutate seed")
             self.logger.info(">>>>[fuzzer] seed len is : {}".format(seed.confItemList.__len__()))
             testcase = self.testcaseGenerator.mutate(seed)
             self.logger.info(">>>>[fuzzer] mutated testcase's length is : {}".format(len(testcase.confItemList)))
-            result, trimmedTestcase = self.testValidator.runTest(testcase)
+            
+            utResult, sysResult, trimmedTestcase = self.testValidator.runTest(testcase)
             self.logger.info(">>>>[fuzzer] testValidator done")
-            if result.status == 1:  
+            # if result.status == 1:  
+            #     self.seedGenerator.addSeedToPool(trimmedTestcase)
+            if (utResult != None) and (utResult.status == 1) and (sysResult != None) and (sysResult.status == 0):
                 self.seedGenerator.addSeedToPool(trimmedTestcase)
             self.logger.info(">>>>[fuzzer] handle seed done")
             ShowStats.writeToPlotData()
             ShowStats.iterationCounts += 1
         ShowStats.loopCounts += 1
+        # if ShowStats.loopCounts % 5 == 0:
+        #     # gc on each five round
+        #     gc.collect()
+        self.logger.info("run() loop end -150")
 
 
 if __name__ == "__main__":

@@ -4,6 +4,7 @@ from math import sqrt
 
 
 class Kmeans(object):
+    
     def __init__(self, dataset, k) -> None:
         self.dataset = dataset
         self.k = k

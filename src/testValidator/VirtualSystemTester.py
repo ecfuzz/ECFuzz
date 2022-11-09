@@ -7,6 +7,13 @@ from testValidator.SystemTester import SystemTester
 
 
 class VirtualSystemTester(SystemTester):
+    """
+   
+
+    Args:
+        self.vulnerableConfItems (dict{ConfItem:list[str]}):
+    """
+
     def __init__(self, vulnerableConfItems: Dict[str, List[str]] = None):
         super(VirtualSystemTester, self).__init__()
         self.vulnerableConfItems: Dict = vulnerableConfItems

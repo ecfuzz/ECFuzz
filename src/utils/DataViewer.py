@@ -57,7 +57,6 @@ class DataViewer(object):
 <b>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;run time</b>: {ShowStats.getTime(round(ShowStats.runTime))}<br/>
 <b>&emsp;&ensp;last new failed unit test</b>: {ShowStats.getTime(round(ShowStats.lastNewFailUnitTest))}<br/>
 <b>last new failed system test</b>: {ShowStats.getTime(round(ShowStats.lastNewFailSystemTest))}<br/>
-<b>&emsp;&ensp;&emsp;longest unit test time</b>: {ShowStats.getTime(round(ShowStats.longgestUnitTestTime))}<br/>
 <b>&emsp;longest system test time</b>: {ShowStats.getTime(round(ShowStats.longgestSystemTestTime))}<br/>
 <b>&emsp;&emsp;&ensp;average unit test time</b>: {ShowStats.getTime(round(ShowStats.averageUnitTestTime))}<br/>
 <b>&emsp;average system test time</b>: {ShowStats.getTime(round(ShowStats.averageSystemTestTime))}<br/>
@@ -68,13 +67,16 @@ class DataViewer(object):
 <b>&emsp;&emsp;&emsp;&emsp;&ensp;total unit test cases</b>: {ShowStats.totalUnitTestcases}<br/>
 <b>&emsp;&emsp;total run unit test count</b>: {ShowStats.totalRunUnitTestsCount}<br/>
 <b>&emsp;&emsp;&emsp;total system test cases</b>: {ShowStats.totalSystemTestcases}<br/>
-<b>&emsp;&emsp;&emsp;&emsp;unit test exec spped</b>: {ShowStats.unitTestExecSpeed}/sec<br/>
-<b>&emsp;&emsp;&ensp;system test exec speed</b>: {ShowStats.systemTestExecSpeed}<br/>
+<b>&emsp;&emsp;&emsp;&ensp;unit test cmd timeout</b>: {ShowStats.unitCmdTimeout}sec<br/>
+<b>&emsp;&emsp;&emsp;&emsp;unit test exec speed</b>: {ShowStats.unitTestExecSpeed}/sec<br/>
+<b>&emsp;&emsp;&ensp;system test exec speed</b>: {ShowStats.systemTestExecSpeed}/sec<br/>
+<b>&emsp;&emsp;&emsp;&emsp;&emsp;ecFuzz exec speed</b>: {ShowStats.ecFuzzExecSpeed}/sec<br/>
+
 ------------------------------<font color="DodgerBlue "><b>Overall Results</b></font>------------------------------<br/>
-<b>&emsp;&emsp;&emsp;&emsp;fuzzing progress</b>: {ShowStats.loopCounts}:{ShowStats.iterationCounts}({ShowStats.currentJob})<br/>
-<b>&emsp;&emsp;&emsp;&emsp;&emsp;&ensp;queue length</b>: {ShowStats.queueLength}<br/>
-<b>&emsp;&ensp;total unit test failures</b>: {ShowStats.totalUnitTestFailed}<br/>
-<b>total system test failures</b>: <font color="red">{ShowStats.totalSystemTestFailed}</font><br/>
+<b>&emsp;&emsp;&emsp;&emsp;&emsp;fuzzing progress</b>: {ShowStats.loopCounts}:{ShowStats.iterationCounts}({ShowStats.currentJob})<br/>
+<b>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&ensp;queue length</b>: {ShowStats.queueLength}<br/>
+<b>&emsp;total system test failures</b>: <font color="red">{ShowStats.totalSystemTestFailed} ({ShowStats.totalSystemTestFailed_Type1}, {ShowStats.totalSystemTestFailed_Type2}, {ShowStats.totalSystemTestFailed_Type3})</font><br/>
+
 """
         self.vis.text(text, win='text')
 
@@ -84,9 +86,12 @@ class DataViewer(object):
         header, data = CSVReader.readCSVFile(self.fuzzerConf['plot_data_path'])
         data = np.array(data, dtype=np.int64)
         timestack = data[:, 0]
-        data = data[:, 1:]
-        self.vis.line(data, timestack, win='data', update=update,
-                      opts=dict(legend=header[1:],
+        data = data[:, 3:10]
+        self.vis.line(data,
+                      timestack,
+                      win='data',
+                      update=update,
+                      opts=dict(legend=header[3:10],
                                 showlegend=True,
                                 markers=False,
                                 title='DataView',

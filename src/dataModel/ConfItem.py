@@ -1,6 +1,11 @@
 class ConfItem(object):
     """
     A data model to store information about a configuration item.
+
+    Attributes:
+        name (str):
+        type (str):
+        value (str):
     """
 
     def __init__(self, name: str = "", type: str = "", value: str = "") -> None:

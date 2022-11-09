@@ -11,7 +11,7 @@ from utils.UnitConstant import DATA_DIR
 from utils.ShowStats import ShowStats
 from utils.Logger import Logger
 
-class StackedMutator(Mutator):
+class SmartMutator(Mutator):
     def __init__(self) -> None:
         super().__init__()
         self.logger: logging.Logger = Logger.get_logger()
@@ -45,15 +45,15 @@ class StackedMutator(Mutator):
 
         """
         testcase = Testcase()
-        number = [i for i in range(3, 6)]
-        mutate_num = number[random.randint(0, len(number) - 1)]
-        # mutate_num = 0
-        # if ShowStats.stackMutationFlag == 1:
-        #     mutate_num = seed.confItemList.__len__()
-        # elif ShowStats.stackMutationFlag == 0:
-        #     mutate_num = 1
-        # else:
-        #     pass
+        # number = [i for i in range(3, 6)]
+        # mutate_num = number[random.randint(0, len(number) - 1)]
+        mutate_num = 0
+        if ShowStats.stackMutationFlag == 1:
+            mutate_num = seed.confItemList.__len__()
+        elif ShowStats.stackMutationFlag == 0:
+            mutate_num = 1
+        else:
+            pass
         item_dict = {}
         
         dependency = ConfAnalyzer.confItemRelations

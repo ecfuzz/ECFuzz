@@ -6,11 +6,26 @@ class ClassifyConfItems(object):
         pass
 
     def run(self, conItems: dict, mapping: dict):
+        """
+       
+       
+        
+        
+        
+        """
+        # conItems = ConfAnalyzer.confItemValueMap
         ctest_data = {}
+        # mapping = ConfAnalyzer.confUnitMap
         for conf in conItems:
             if conf in mapping:
                 ctest_data[conf] = mapping[conf]
+        # print("ctest_data:", ctest_data)
+        # print(">>>>conf_has_tests_count:%s,conf_has_not_tests_count:%s" %(len(ctest_data),len(conItems)-len(ctest_data)))
+        
         sorted_ctest_data = sorted(ctest_data.items(), key=lambda x:len(x[1]), reverse=True)
+        # print(sorted_ctest_data)
+        # for x in sorted_ctest_data:
+        #     print(x[0], ":", len(x[1]))
         baseConf_len = 0
         baseConf = set()
         mutableConf = set()
@@ -19,7 +34,14 @@ class ClassifyConfItems(object):
             tmp_conf_len = []
             tmp_conf_len.append(len(x[1]))
             all_conf_len.append(tmp_conf_len)
+            
+            # BASECONF_THRESHOLD = 2000
+            # if len(x[1]) > BASECONF_THRESHOLD:
+            #     baseConf.add(x[0])
+            # else:
+            #     mutableConf.add(x[0])
 
+        
         kmeans = Kmeans(all_conf_len, 2)
         assignment, _ = kmeans.k_means()
         if (assignment[0] == 0):
@@ -36,5 +58,7 @@ class ClassifyConfItems(object):
                 baseConf.add(x[0])
             else:
                 mutableConf.add(x[0])
+        # print("BaseConf:", len(baseConf))
+        # print("MutableConf:", len(mutableConf))
         return list(baseConf), list(mutableConf)
 

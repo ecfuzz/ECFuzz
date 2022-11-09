@@ -18,7 +18,7 @@ from utils.Configuration import Configuration
 
 def testAllInDir():
     """
-    全局覆盖率收集
+   
     """
     prefix = "*" * 70 + "\n" + "*" * 20 + " "
     suffix = "\n" + "*" * 70

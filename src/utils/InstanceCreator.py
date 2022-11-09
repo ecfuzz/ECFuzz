@@ -19,13 +19,9 @@ class InstanceCreator(object):
         Returns:
             An instance of the class specified by pathtoclass
         """
-        try:
-            tokens = pathToClass.split('.')
-            targetModule = importlib.import_module('.'.join(tokens[:-1]))
-            targetClass = getattr(targetModule, tokens[-1])
-            instance = targetClass(*args, **kwargs)
-        except Exception as e:
-            print(e, file=sys.stderr)
-            instance = None
 
+        tokens = pathToClass.split('.')
+        targetModule = importlib.import_module('.'.join(tokens[:-1]))
+        targetClass = getattr(targetModule, tokens[-1])
+        instance = targetClass(*args, **kwargs)
         return instance

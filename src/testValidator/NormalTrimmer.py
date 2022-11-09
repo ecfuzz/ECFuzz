@@ -7,6 +7,9 @@ from testValidator.Trimmer import Trimmer
 
 
 class NormalTrimmer(Trimmer):
+    """
+   
+    """
 
     def __init__(self, systemTester: SystemTester = None, defaultValueMap: Dict[str, str] = None):
         super(NormalTrimmer, self).__init__(systemTester, defaultValueMap)
@@ -20,6 +23,16 @@ class NormalTrimmer(Trimmer):
         return testcase
 
     def normalTrim(self, confItems: List[ConfItem]) -> List[ConfItem]:
+        """
+       
+
+        Args:
+            confItems: a list of configuration items needed to be trimmed
+
+        Returns:
+            trimmedConfItems : a trimmed list of configuration items
+        """
+
         trimmedConfItems = []
 
         testcase = Testcase()

@@ -33,7 +33,7 @@ class TestDataViewer(unittest.TestCase):
         ShowStats.averageUnitTestTime = newValue.genFloat(str(0.0))
         # system test
         ShowStats.averageSystemTestTime = newValue.genFloat(str(0.0))
-        # SingleMutator、StackedMutator
+        # 
         ShowStats.mutationStrategy = newValue.genStringList("123")
         ShowStats.nowMutationType = newValue.genStringList("123")
         ShowStats.nowTestConfigurationName = newValue.genStringList("123")

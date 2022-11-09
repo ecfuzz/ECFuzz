@@ -7,6 +7,10 @@ from dataModel.CounterWriteToFileInterface import CounterWriteToFileInterface
 class Seed(CounterWriteToFileInterface):
     """
     This is a data model for seed in configuration fuzzing.
+
+    Attributes:
+        confItemList (List[ConfItem]) :
+        _noneConfItem (ConfItem):
     """
 
     def __init__(self, confItems: List[ConfItem] = None) -> None:

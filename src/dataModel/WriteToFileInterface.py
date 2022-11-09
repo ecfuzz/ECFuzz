@@ -5,6 +5,11 @@ import os
 class WriteToFileInterface(object, metaclass=ABCMeta):
     """
     This interface requires for realizing a function that write itself to file.
+
+    Attributes:
+        fileDir (str): a directory to store files, default is `.`.
+        fileName (str):
+        filePath (str): an absolute path for storing file.
     """
 
     def __init__(self) -> None:

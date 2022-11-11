@@ -1,8 +1,8 @@
-# ECFuzz: Effective Configuration Fuzzing
+# ECFuzz: Effective Configuration Fuzzing in Cloud Systems
 
 ## Introduction
 
-An effective configuration fuzzer for large-scale software systems. 
+An effective configuration fuzzer for large-scale cloud systems. 
 
 ## Runtime Preview
 

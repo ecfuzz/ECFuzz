@@ -15,4 +15,4 @@ An effective configuration fuzzer for large-scale cloud systems.
 
 ## Usage 
 
-Please see `data/README.md`
+Please see `data/README.md`. **Some files related to java scripts are also in `data/README.md`**.

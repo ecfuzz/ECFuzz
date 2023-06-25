@@ -1,6 +1,6 @@
 # some special param's value
-FILEPATHS = ["/valid/file1", "/valid/file2", "/dev/shm", "@name@", "///file"]
-DIRPATHS = ["/valid/dir1", "/valid/dir2", "/dev/shm", "valid/dir", "@name@", "file:///root/hdfs"]
+FILEPATHS = ["/valid/file1", "/valid/file2", "/dev/shm", "@name@", "///file", "/", ""]
+DIRPATHS = ["/valid/dir1", "/valid/dir2", "/dev/shm", "valid/dir", "@name@", "file:///root/hdfs", "/", ""]
 USERS = ['xdsuper', 'samsuper', "hadoop", "+-#$", "12", "root"]
 GROUPS = ['xdgroup', 'samgroup', "hadoop", "+-#$", "12", "root"]
 PORTS = ["3000", "3001", "80", "0", "-1", "65599", "@@", "[names]"]
@@ -26,13 +26,13 @@ class NewValue(object):
 
     def constraint_method(self, constraint_type: str, confItemA: ConfItem, confItemB: ConfItem):
         if constraint_type == "Control Dependency":
-            
+            #如果随机选择的配置项中仅包含第一个参数，那就直接使用genvalue函数进行变异
             if confItemA.type == "BOOL":
                 ShowStats.nowTestConfigurationName = confItemA.name
                 ShowStats.nowMutationType = confItemA.type
                 confItemA.value = self.genValue(confItemA.type, confItemA.value)
             else:
-                
+                #如果随机选择的配置项中仅包含第二个参数，则需要先将第一个参数设置为true，再使用genvalue函数
                 if confItemB.type == "BOOL":
                     ShowStats.nowTestConfigurationName = confItemB.name + ","
                     ShowStats.nowMutationType = confItemB.type + ","
@@ -47,27 +47,27 @@ class NewValue(object):
                 confItemA.value = self.genValue(confItemA.type, confItemA.value)
 
         elif constraint_type == "Value Relationship Dependency":
-            
+            #两个配置参数同时进行变异
             ShowStats.nowTestConfigurationName = confItemA.name + "," + confItemB.name
             ShowStats.nowMutationType = confItemA.type + "," + confItemB.type
             confItemA.value = self.genValue(confItemA.type, confItemA.value)
             confItemB.value = self.genValue(confItemB.type, confItemB.value)
 
         elif constraint_type == "Overwrite":
-            
+            #直接使用genvalue直接变异
             ShowStats.nowTestConfigurationName = confItemA.name
             ShowStats.nowMutationType = confItemA.type
             confItemA.value = self.genValue(confItemA.type, confItemA.value)
 
         elif constraint_type == "Default Value Dependency":
-            
+            #如果随机选择的配置项中有默认值依赖，直接将两个配置项变异成一样的值。
             ShowStats.nowTestConfigurationName = confItemA.name + "," + confItemB.name
             ShowStats.nowMutationType = confItemA.type + "," + confItemB.type
             confItemA.value = self.genValue(confItemA.type, confItemA.value)
             confItemB.value = confItemA.value
 
         elif constraint_type == "Behavior Dependency":
-            
+            #如果随机选择的配置项中有行为依赖，两个配置参数同时进行变异。
             ShowStats.nowTestConfigurationName = confItemA.name + "," + confItemB.name
             ShowStats.nowMutationType = confItemA.type + "," + confItemB.type
             confItemA.value = self.genValue(confItemA.type, confItemA.value)

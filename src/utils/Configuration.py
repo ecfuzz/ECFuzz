@@ -19,9 +19,8 @@ class Configuration(object):
     putConf: Dict[str,str]
 
     @staticmethod
-    def parseConfiguration() -> None:
+    def parseConfiguration(commandConf: dict) -> None:
         """
-       `.conf`
 
         parse a configuration dictionary from a .conf file.
 
@@ -39,7 +38,6 @@ class Configuration(object):
 
         for section in sections.values():
             for key, value in section.items():
-                #
                 if "path" in key or "dir" in key:
                     section[key] = os.path.join(ROOT_DIR, value)
                 elif value.startswith('['):
@@ -47,9 +45,12 @@ class Configuration(object):
 
         Configuration.configuration = sections
         Configuration.fuzzerConf = sections['fuzzer']
-
-        """
+        for p,v in commandConf.items():
+            # if p in Configuration.fuzzerConf:
+            Configuration.fuzzerConf[p] = v
+ 
         project = sections['fuzzer']['project']
+        project = Configuration.fuzzerConf['project']
         putConfPath = sections[project]['file_path']
 
         cf = configparser.ConfigParser()
@@ -58,7 +59,6 @@ class Configuration(object):
         section = {section_key: dict(cf.items(section_key)) for section_key in cf.sections()}[project]
 
         for key, value in section.items():
-            #
             if "path" in key or "dir" in key:
                 section[key] = os.path.join(ROOT_DIR, value)
             elif value.startswith('['):

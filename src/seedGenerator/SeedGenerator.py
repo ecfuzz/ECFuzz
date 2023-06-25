@@ -16,14 +16,7 @@ class SeedGenerator(object):
     Seed Generator is responsible for generating high quality seeds according to the information
     offered by `ConfAnalyzer`.
 
-    Attributes:
-        confItemsBasic (List[str]):
-        confItemMutable (List[str]):
-        confItems (List[str]):
-        confItemRelations (Dict[str, List[List[str, str]]]):
-        confItemTypeMap (Dict[str, str]):-
-        confItemValueMap (Dict[str, str]):-
-        lastGeneratedSeed (Seed):
+
     """
 
     def __init__(self) -> None:
@@ -33,7 +26,6 @@ class SeedGenerator(object):
 
         self.seedPoolSelectionRatio = float(fuzzerConf['seed_pool_selection_ratio'])
 
-        
         self.confItemsBasic: List[str] = ConfAnalyzer.confItemsBasic
         self.confItemMutable: List[str] = ConfAnalyzer.confItemsMutable
         self.confItemMutableSize: int = len(self.confItemMutable)
@@ -45,6 +37,19 @@ class SeedGenerator(object):
         self.lastGeneratedSeed = None
 
         self.logger.info("SeedGenerator initialized.")
+
+    def updateConfMutable(self) -> None:
+        # update mutable 
+        for confName in ConfAnalyzer.excludeConf:
+            if confName in self.confItemMutable:
+                self.confItemMutable.remove(confName)
+        # update size
+        self.confItemMutableSize = len(self.confItemMutable)
+        # update confItems
+        for confName in ConfAnalyzer.excludeConf:
+            if confName in self.confItems:
+                self.confItems.remove(confName)
+        
 
     def generateSeed(self) -> Seed:
         """
@@ -59,18 +64,16 @@ class SeedGenerator(object):
             self: Access the attributes and methods of the class in python
 
         Returns:
-            Seed:
+            Seed: 
         """
         ShowStats.currentJob = 'generating seed'
         fromPool = self.seedPool.__len__() > 0 and random.random() > self.seedPoolSelectionRatio
         if fromPool:
             self.logger.info("Random Choose a Seed from pool.")
             self.lastGeneratedSeed = random.choice(self.seedPool)
-        else:  #
+        else:  
             self.logger.info("Try creating a Seed...")
-            #
             confItemList = copy.deepcopy(self.confItemMutable)
-            #
             # k = random.randint(1, confItemList.__len__())
             if Configuration.fuzzerConf['mutator'].split(".")[-1] == "SingleMutator":
                 k = 1
@@ -78,22 +81,25 @@ class SeedGenerator(object):
                 k = random.randint(3, 6)
 
             if random.random() > float(Configuration.fuzzerConf['seed_gen_seq_ratio']):
-                #
                 random.shuffle(confItemList)
                 confItemList = confItemList[:k]
             else:
-                #
                 b = min(self.confItemMutableSize, self.sequentialGeneratorIndex + k)
-                confItemList = confItemList[self.sequentialGeneratorIndex: b]
+                if self.sequentialGeneratorIndex > b:
+                    confItemList = confItemList[b : self.sequentialGeneratorIndex]
+                else:
+                    confItemList = confItemList[self.sequentialGeneratorIndex: b]
                 self.sequentialGeneratorIndex = b
                 if self.sequentialGeneratorIndex >= self.confItemMutableSize:
                     self.sequentialGeneratorIndex = 0
 
-            #
             relatedConfItems = []
             for confItemName in confItemList:
                 if self.confItemRelations.__contains__(confItemName):
                     relatedConfItems.extend(relation[0] for relation in self.confItemRelations[confItemName] if relation[0] in self.confItems)
+                    
+            if float(Configuration.fuzzerConf['seed_pool_selection_ratio']) == float(1) and float(Configuration.fuzzerConf['seed_gen_seq_ratio']) == 0:
+                relatedConfItems = []
 
             confItemList += relatedConfItems
 

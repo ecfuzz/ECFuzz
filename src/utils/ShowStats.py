@@ -23,7 +23,7 @@ class ShowStats(object):
     averageUnitTestTime: float = 0.0
     #system test
     averageSystemTestTime: float = 0.0
-    
+    #SingleMutator、StackedMutator
     mutationStrategy: str = ""
     nowMutationType: str = ""
     nowTestConfigurationName: str = ""
@@ -60,8 +60,6 @@ class ShowStats(object):
 
     #SeedGenerator.py, TestcaseGenerator.py, TestValidator.py
     currentJob: str = 'init...'
-    
-    #
     lastError23 : float = 0.0 
     stackMutationFlag : int = 0
     
@@ -141,14 +139,11 @@ class ShowStats(object):
     @staticmethod
     def run(stopSoon) -> None:
         # curses.initscr()
-        # curses.curs_set(0)
-        
         # print("\33[2J")
-        
         print("\33[?25l ")
         with output(initial_len=26, interval=0) as output_lines:
             while True:
-                output_lines[0]  = f"\033[33m          effective configuration fuzzing (\033[32m{Configuration.fuzzerConf['project']})           "
+                output_lines[0]  = f"\033[33m          effective configuration fuzzing \033[32m({Configuration.fuzzerConf['project']})           "
                 output_lines[1]  = f"\033[34m-------------------------------Time--------------------------------"
                 output_lines[2]  = f"\033[36m                         run time: \033[37m{ShowStats.getTime(round(ShowStats.runTime))}"
                 output_lines[3]  = f"\033[36m          last new fail unit test: \033[37m{ShowStats.getTime(round(ShowStats.lastNewFailUnitTest))}"
@@ -175,9 +170,8 @@ class ShowStats(object):
                 output_lines[24] = " "
                 if not stopSoon.empty():
                     output_lines[25] = f"\033[32m Have a good day!"
-                    print("\033[37m")
-                    
-                    print("\33[?25h")
+                    # print("\033[37m")
+                    # print("\33[?25h")
                     break
                 time.sleep(1)
                 ShowStats.runTime = time.time() - ShowStats.fuzzerStartTime

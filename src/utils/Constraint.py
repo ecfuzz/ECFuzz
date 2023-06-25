@@ -10,7 +10,7 @@ class Constraint(object):
         self.project: str = Configuration.fuzzerConf['project']
         self.constraintPath: str = Configuration.putConf['constraint_path']
 
-    def getConstraintMap(self, baseConf) -> dict:
+    def getConstraintMap(self) -> dict:
         dependency = dict()
         
         # baseConf = ConfAnalyzer.confItemsBasic
@@ -19,10 +19,6 @@ class Constraint(object):
             reader = csv.reader(f)
             header = next(reader)
             for row in reader:
-                
-                if (row[1] in baseConf) or (row[2] in baseConf):
-                    continue
-                
                 tmp1 = []
                 #Configuration Parameter B
                 tmp1.append(row[2])
@@ -34,7 +30,6 @@ class Constraint(object):
                     dependency[row[1]] = []
                     dependency[row[1]].append(tmp1)
                     
-                
                 tmp2 = []
                 #Configuration Parameter A
                 tmp2.append(row[1])
@@ -45,7 +40,6 @@ class Constraint(object):
                 else:
                     dependency[row[2]] = []
                     dependency[row[2]].append(tmp2)
-                
                 
                 # if row[0] not in constraint_type_set:
                 #     constraint_type_set.add(row[0])

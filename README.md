@@ -1,4 +1,4 @@
-# ECFuzz: Effective Configuration Fuzzing in Cloud Systems
+# ECFuzz: Effective Configuration Fuzzing for Large-Scale Systems
 
 ## Introduction
 

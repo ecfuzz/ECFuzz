@@ -2,7 +2,8 @@
 
 ## Introduction
 
-An effective configuration fuzzer for large-scale cloud systems. 
+An effective configuration fuzzer for large-scale cloud systems.
+46th International Conference on Software Engineering (ICSE 2024) 
 
 ## Runtime Preview
 
@@ -16,3 +17,12 @@ An effective configuration fuzzer for large-scale cloud systems.
 ## Usage 
 
 Please see `data/README.md`. **Some files related to java scripts are also in `data/README.md`**.
+
+You can also use docker image from docker hub like below
+```shell
+sudo docker pull ecfuzz/ecfuzz:0.0.5
+sudo docker run -it --name=icse-ecfuzz ecfuzz/ecfuzz:0.0.5 /bin/bash
+# and then enter the docker container, and run the fuzzer
+cd ecfuzz/src
+python3 fuzzer.py
+```

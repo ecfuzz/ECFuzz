@@ -20,8 +20,8 @@ Please see `data/README.md`. **Some files related to java scripts are also in `d
 
 You can also use docker image from docker hub like below
 ```shell
-sudo docker pull ecfuzz/ecfuzz:0.0.5
-sudo docker run -it --name=icse-ecfuzz ecfuzz/ecfuzz:0.0.5 /bin/bash
+sudo docker pull ecfuzz/ecfuzz:1.0
+sudo docker run -it --privileged --name icse-ecfuzz ecfuzz/ecfuzz:1.0 /bin/bash
 # and then enter the docker container, and run the fuzzer
 cd ecfuzz/src
 python3 fuzzer.py

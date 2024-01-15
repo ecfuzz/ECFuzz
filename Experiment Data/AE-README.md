@@ -1,32 +1,17 @@
-# 1. Purpose
 
-The purpose of this work is to effectively find bugs caused by configuration for large-scale systems. Our artifact is an *executable artifact* and is implemented with 5902 lines of Python code and 1701 lines of Java code. We are applying for three badges: *available*, *reusable* and *results reproduced* because of the following reasons:
+# 1. Setup
 
-- **Available**: Our artifact relevant to this paper has been placed on a publicly accessible archival repository. We have uploaded the complete code and  detailed documentation to the archival repository *Software Heritage*. The link is:
-
-  https://archive.softwareheritage.org/browse/origin/https://github.com/ecfuzz/ECFuzz
-
-- **Reusable**: To easily install and run our artifact, we provide a complete docker image and upload it to the docker hub (https://www.docker.com/products/docker-hub/). Also, we provide detailed documents to facilitate reuse and repurposing.
-
-  We also provide detailed steps for reproducing experimental results.
-
-# 2. Provenance
-
-- The artifact is available in the archival repository *Software Heritage* with the link: https://archive.softwareheritage.org/browse/origin/https://github.com/ecfuzz/ECFuzz
-
-# 3. Setup
-
-## 3.1 Hardware
+## 1.1 Hardware
 
 A CPU server with at least 4-core 4G memory.
 
-## 3.2 Software
+## 1.2 Software
 
 We provide a public docker image in docker hub. All software environments are installed in this docker image. The operating system is 64-bit Ubuntu 16.04 LTS.
 
-# 4. Usage
+# 2. Usage
 
-## 4.1 Basic Usage
+## 2.1 Basic Usage
 
 1. Download the docker image from docker hub.
 
@@ -53,7 +38,7 @@ hadoop@a077d82fbc93:~$ cd ecfuzz/src/
 hadoop@a077d82fbc93:~/ecfuzz/src$ python3 fuzzer.py
 ```
 
-## 4.2 Reproduction
+## 2.2 Reproduction
 
 All of our experimental results were obtained by modifying the configuration file (i.e., `fuzzing.conf`) and running fuzzer repeatedly. Therefore, we introduce the important configuration file (`/home/hadoop/ecfuzz/data/fuzzer/fuzzing.conf`) of our fuzzer below:
 
@@ -194,7 +179,7 @@ file_path = data/fuzzer/alluxio.conf
 
 ```
 
-## 4.3 Data Details In Our Paper 
+## 2.3 Data Details In Our Paper 
 
 Table 5 data: We can get this data from the display board on the terminal.
 

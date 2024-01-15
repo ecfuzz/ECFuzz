@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+
+<configuration>
+    <property>
+        <name>fs.defaultFS</name>
+        <value>hdfs://127.0.0.1:9000</value>
+    </property>
+     <property>
+        <name>io.file.buffer.size</name>
+        <value>-1000</value>
+    </property>
+</configuration>

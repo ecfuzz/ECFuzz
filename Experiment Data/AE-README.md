@@ -34,7 +34,7 @@ hadoop@a077d82fbc93:~$ bash prepare.sh
 hadoop@a077d82fbc93:~$ cd ~/ecfuzz/data/fuzzer/
 hadoop@a077d82fbc93:~/ecfuzz/data/fuzzer$ cat fuzzing.conf
 # here we can do nothing for config, and run the fuzzer.
-hadoop@a077d82fbc93:~$ cd ecfuzz/src/
+hadoop@a077d82fbc93:~$ cd ~/ecfuzz/src/
 hadoop@a077d82fbc93:~/ecfuzz/src$ python3 fuzzer.py
 ```
 

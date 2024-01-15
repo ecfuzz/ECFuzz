@@ -26,3 +26,6 @@ sudo docker run -it --privileged --name icse-ecfuzz ecfuzz/ecfuzz:1.0 /bin/bash
 cd ecfuzz/src
 python3 fuzzer.py
 ```
+
+## Others
+There is a more detailed readme at this location(./Experiment Data/AE-README.md).

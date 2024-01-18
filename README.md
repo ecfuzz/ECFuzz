@@ -10,9 +10,9 @@ An effective configuration fuzzer for large-scale systems.
 <img src="_preview/running-alluxio.png" alt="image-20221109195021554" style="zoom:67%;" />
 
 ## Experiment Data Link
-[Experiment Data](https://docs.google.com/spreadsheets/d/1dJ7qdBNry2ljwq6jxRf4Ee-vH1ESG4Un/edit?usp=share_link&ouid=106562655925167731023&rtpof=true&sd=true)
+Experiment Data: ./Experiment Data/Exp-RQ4.xlsx and ./Experiment Data/Exp-data-of-ECFuzz.xlsx
 
-[Exption Crash Files](https://drive.google.com/drive/folders/1d_M6RPpgkSwFKjeCSDBG-6SzYIAEUCVp?usp=sharing)
+Exption Crash Files: ./Experiment Data/exception_crash
 
 ## Usage 
 
@@ -26,3 +26,6 @@ sudo docker run -it --privileged --name icse-ecfuzz ecfuzz/ecfuzz:1.0 /bin/bash
 cd ecfuzz/src
 python3 fuzzer.py
 ```
+
+## Others
+There is a more detailed readme at this location(./Experiment Data/AE-README.md).

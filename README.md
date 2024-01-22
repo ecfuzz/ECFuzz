@@ -28,4 +28,4 @@ python3 fuzzer.py
 ```
 
 ## Others
-There is a more detailed readme at this location(./Experiment Data/AE-README.md).
+There is a more detailed readme at this location(./Experiment Data/README.md).
